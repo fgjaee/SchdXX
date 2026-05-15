@@ -8,11 +8,10 @@ import type {
 } from '../types';
 import {
   days, parseShift, roleFor, formatHours, formatTimeText,
-  createTeamMember, emptyShifts, formatDate, getSunday,
-  addDays, defaultTruckForDate, defaultOpenNeededForDate,
-  defaultOvernightNeededForNight, applyOvernightFromMorningTrucks,
+  createTeamMember, emptyShifts, defaultTruckForDate,
+  applyOvernightFromMorningTrucks,
   defaultShiftDefinitions, toNumber, checkAvailabilityViolation,
-  checkSixthDayViolation
+  checkSixthDayViolation, roleLabel, cellClass
 } from '../lib/helpers';
 
 // OCR via CDN (loaded in index.html)
@@ -1122,8 +1121,14 @@ export function EditableRosterStaffingView({
                               <span className={`text-2xl font-black font-data-tabular tracking-tighter transition-colors duration-500 ${hrs >= 40 ? 'text-primary' : hrs > 0 ? 'text-on-surface' : 'text-on-surface-variant/30'}`}>
                                 {formatHours(hrs)}
                               </span>
-                              : hrs === 40 
-                                ? 'bg-status-opener-bg text-status-opener-text border-status-opener-text/20' 
+                              <span className="text-[11px] font-bold text-on-surface-variant/40">h</span>
+                            </div>
+                          </div>
+                          <div
+                            className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition-colors duration-500 ${hrs > 40
+                              ? 'bg-error-container text-on-error-container border-error/20'
+                              : hrs === 40
+                                ? 'bg-status-opener-bg text-status-opener-text border-status-opener-text/20'
                                 : 'bg-surface-container-high text-on-surface-variant border-outline-variant/20'
                             }`}
                           >
