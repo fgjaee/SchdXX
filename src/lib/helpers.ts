@@ -134,12 +134,12 @@ export function roleLabel(role: Role): string {
 
 export function cellClass(role: Role): string {
   const classes: Record<Role, string> = {
-    open: "bg-emerald-100 border-emerald-300",
-    close: "bg-orange-100 border-orange-300",
-    overnight: "bg-violet-100 border-violet-300",
-    excluded: "bg-slate-100 border-slate-300",
-    mid: "bg-sky-100 border-sky-300",
-    none: "bg-white border-slate-200",
+    open: "bg-status-opener-bg border-status-opener-text/20",
+    close: "bg-status-closer-bg border-status-closer-text/20",
+    overnight: "bg-status-overnight-bg border-status-overnight-text/20",
+    excluded: "bg-surface-container-high border-outline-variant",
+    mid: "bg-status-mid-bg border-status-mid-text/20",
+    none: "bg-surface-container-lowest border-outline-variant",
   };
   return classes[role];
 }
@@ -175,36 +175,66 @@ export function applyOvernightFromMorningTrucks(targets: Target[]): Target[] {
   });
 }
 
-const defaultDayDates = ["2026-05-10","2026-05-11","2026-05-12","2026-05-13","2026-05-14","2026-05-15","2026-05-16"];
+export function getSunday(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  const diff = d.getDate() - day;
+  return new Date(d.setDate(diff));
+}
 
-export const defaultTargets: Target[] = days.map((day, index) => {
-  const date = defaultDayDates[index] || "";
-  return {
-    day, date,
-    truck: defaultTruckForDate(day, date),
-    openNeeded: defaultOpenNeededForDate(day, date),
-    closeNeeded: day === "Sun" || day === "Sat" ? "2" : "1",
-    overnightNeeded: defaultOvernightNeededForNight(day, date),
-  };
-});
+export function formatDate(date: Date): string {
+  return `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}-${padNumber(date.getDate())}`;
+}
+
+export function getWeekId(date: Date): string {
+  return formatDate(getSunday(date));
+}
+
+export function getWeekLabels() {
+  const today = new Date();
+  const currentSun = getSunday(today);
+  
+  const lastSun = new Date(currentSun);
+  lastSun.setDate(lastSun.getDate() - 7);
+  
+  const nextSun = new Date(currentSun);
+  nextSun.setDate(nextSun.getDate() + 7);
+  
+  const nextNextSun = new Date(currentSun);
+  nextNextSun.setDate(nextNextSun.getDate() + 14);
+
+  return [
+    { label: 'Last Week', id: formatDate(lastSun), date: lastSun },
+    { label: 'Current Week', id: formatDate(currentSun), date: currentSun },
+    { label: 'Next Week', id: formatDate(nextSun), date: nextSun },
+    { label: 'Next Week +1', id: formatDate(nextNextSun), date: nextNextSun },
+  ];
+}
+
+export function checkSixthDayViolation(member: TeamMember): boolean {
+  if (member.rosterStatus === 'Inactive') return false;
+  const shiftCount = member.shifts.filter(s => s.trim().length > 0).length;
+  return shiftCount >= 6;
+}
+
+export function createDefaultTargets(startDate: string): Target[] {
+  return days.map((day, index) => {
+    const date = addDays(startDate, index);
+    return {
+      day, date,
+      truck: defaultTruckForDate(day, date),
+      openNeeded: defaultOpenNeededForDate(day, date),
+      closeNeeded: day === "Sun" || day === "Sat" ? "2" : "1",
+      overnightNeeded: defaultOvernightNeededForNight(day, date),
+    };
+  });
+}
+
+export const defaultTargets: Target[] = createDefaultTargets(formatDate(getSunday(new Date())));
 
 export const defaultRoster: TeamMember[] = [
-  { id: "kenneth", name: "Kenneth", status: "PT", rosterStatus: "Active", shifts: ["4:00 AM - 12:00 PM","","","","","",""], unavailable: emptyShifts() },
-  { id: "kamran", name: "Kamran", status: "FT", rosterStatus: "Active", shifts: ["1:30 PM - 10:00 PM","","1:30 PM - 10:00 PM","1:30 PM - 10:00 PM","","1:30 PM - 10:00 PM","1:30 PM - 10:00 PM"], unavailable: ["","Unavailable","","","","",""] },
-  { id: "sandra", name: "Sandra", status: "FT", rosterStatus: "Active", shifts: ["","","4:00 AM - 12:00 PM","4:00 AM - 12:00 PM","4:00 AM - 12:00 PM","4:00 AM - 12:00 PM","4:00 AM - 12:00 PM"], unavailable: ["","Unavailable","","Unavailable","Unavailable","Unavailable",""] },
-  { id: "solomon", name: "Solomon", status: "PT", rosterStatus: "Active", shifts: ["11:00 PM - 7:00 AM","11:00 PM - 7:00 AM","11:00 PM - 7:00 AM","","","11:00 PM - 7:00 AM","11:00 PM - 7:00 AM"], unavailable: emptyShifts() },
-  { id: "john", name: "John", status: "PT", rosterStatus: "Active", shifts: ["7:15 AM - 2:00 PM","","9:00 AM - 2:00 PM","","7:15 AM - 2:00 PM","",""], unavailable: ["","Unavailable","","","Unavailable","",""] },
-  { id: "diana", name: "Diana", status: "PT", rosterStatus: "Active", shifts: ["6:00 AM - 2:00 PM","6:00 AM - 2:00 PM","6:00 AM - 2:00 PM","6:00 AM - 2:00 PM","6:00 AM - 2:00 PM","",""], unavailable: ["","","","","","","Unavailable"] },
-  { id: "heidi", name: "Heidi", status: "PT", rosterStatus: "Active", shifts: ["5:00 AM - 12:00 PM","","","5:00 AM - 12:00 PM","","5:00 AM - 12:00 PM","5:00 AM - 12:00 PM"], unavailable: emptyShifts() },
-  { id: "naomi", name: "Naomi", status: "PT", rosterStatus: "Active", shifts: ["","6:00 AM - 1:00 PM","6:00 AM - 12:00 PM","6:00 AM - 1:00 PM","","6:00 AM - 12:00 PM","6:00 AM - 1:00 PM"], unavailable: emptyShifts() },
-  { id: "james", name: "James", status: "FT", rosterStatus: "Active", shifts: ["7:00 AM - 3:00 PM","7:00 AM - 3:00 PM","7:00 AM - 3:00 PM","2:00 PM - 10:00 PM","","7:00 AM - 3:00 PM",""], unavailable: emptyShifts() },
-  { id: "marlon", name: "Marlon", status: "FT", rosterStatus: "Active", shifts: ["","","3:00 AM - 11:00 AM","3:00 AM - 11:00 AM","3:00 AM - 11:00 AM","1:00 AM - 9:00 AM","3:00 AM - 11:00 AM"], unavailable: emptyShifts() },
-  { id: "nabil", name: "Nabil", status: "PT", rosterStatus: "Active", shifts: ["6:00 AM - 2:00 PM","6:00 AM - 2:00 PM","","6:00 AM - 1:00 PM","","6:00 AM - 2:00 PM","6:00 AM - 2:00 PM"], unavailable: emptyShifts() },
-  { id: "victoria", name: "Victoria", status: "PT", rosterStatus: "Active", shifts: ["","","","","","4:00 AM - 12:00 PM",""], unavailable: ["Unavailable","Unavailable","Unavailable","Unavailable","Unavailable","Unavailable","Unavailable"] },
-  { id: "beth", name: "Beth", status: "FT", rosterStatus: "Inactive", shifts: emptyShifts(), unavailable: emptyShifts() },
-  { id: "blake", name: "Blake", status: "PT", rosterStatus: "Active", shifts: ["12:00 PM - 8:00 PM","12:00 PM - 8:00 PM","","","12:00 PM - 8:00 PM","","12:00 PM - 8:00 PM"], unavailable: emptyShifts() },
-  { id: "michael", name: "Michael", status: "PT", rosterStatus: "Active", shifts: ["","5:00 AM - 1:00 PM","5:00 AM - 1:00 PM","","","","5:00 AM - 1:00 PM"], unavailable: ["","","Unavailable","","Unavailable","",""] },
-  { id: "deja", name: "Deja", status: "PT", rosterStatus: "Active", shifts: ["5:00 AM - 11:00 AM","5:00 AM - 11:00 AM","","","5:00 AM - 11:00 AM","",""], unavailable: emptyShifts() },
-  { id: "stephanie", name: "Stephanie", status: "PT", rosterStatus: "Inactive", shifts: emptyShifts(), unavailable: emptyShifts() },
-  { id: "barry", name: "Barry", status: "PT", rosterStatus: "Inactive", shifts: emptyShifts(), unavailable: ["Unavailable","Unavailable","Unavailable","Unavailable","Unavailable","Unavailable","Unavailable"] },
+  { id: "kenneth", name: "Kenneth", status: "PT", rosterStatus: "Active", shifts: ["4:00 AM - 12:00 PM","","","","","",""], unavailable: emptyShifts(), primaryDepartment: "Produce" },
+  { id: "kamran", name: "Kamran", status: "FT", rosterStatus: "Active", shifts: ["1:30 PM - 10:00 PM","","1:30 PM - 10:00 PM","1:30 PM - 10:00 PM","","1:30 PM - 10:00 PM","1:30 PM - 10:00 PM"], unavailable: ["","Unavailable","","","","",""], primaryDepartment: "Produce" },
+  { id: "sandra", name: "Sandra", status: "FT", rosterStatus: "Active", shifts: ["","","4:00 AM - 12:00 PM","4:00 AM - 12:00 PM","4:00 AM - 12:00 PM","4:00 AM - 12:00 PM","4:00 AM - 12:00 PM"], unavailable: ["","Unavailable","","Unavailable","Unavailable","Unavailable",""], primaryDepartment: "Produce" },
+  { id: "solomon", name: "Solomon", status: "PT", rosterStatus: "Active", shifts: ["11:00 PM - 7:00 AM","11:00 PM - 7:00 AM","11:00 PM - 7:00 AM","","","11:00 PM - 7:00 AM","11:00 PM - 7:00 AM"], unavailable: emptyShifts(), primaryDepartment: "Produce" },
 ];

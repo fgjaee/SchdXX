@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Smart Roster Planner - Weekly Schedule</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style type="text/tailwindcss">
+        @layer utilities {
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+        }
+    </style>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container": "#eceef0",
+                        "outline-variant": "#c2c6d3",
+                        "on-tertiary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "on-background": "#191c1e",
+                        "surface-container-low": "#f2f4f6",
+                        "on-tertiary-container": "#44d69b",
+                        "on-primary-fixed-variant": "#00468c",
+                        "on-tertiary-fixed": "#002113",
+                        "surface-tint": "#245eaa",
+                        "background": "#f7f9fb",
+                        "on-surface": "#191c1e",
+                        "surface-container-lowest": "#ffffff",
+                        "secondary-fixed-dim": "#bcc7de",
+                        "inverse-primary": "#a9c7ff",
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#e0e3e5",
+                        "surface-bright": "#f7f9fb",
+                        "primary": "#00366e",
+                        "error-container": "#ffdad6",
+                        "primary-fixed": "#d6e3ff",
+                        "tertiary": "#003f29",
+                        "on-primary": "#ffffff",
+                        "on-secondary-container": "#586377",
+                        "tertiary-container": "#00593c",
+                        "on-error-container": "#93000a",
+                        "surface-dim": "#d8dadc",
+                        "on-secondary-fixed": "#111c2d",
+                        "on-secondary-fixed-variant": "#3c475a",
+                        "primary-container": "#004c97",
+                        "surface": "#f7f9fb",
+                        "on-surface-variant": "#424751",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-error": "#ffffff",
+                        "secondary-fixed": "#d8e3fb",
+                        "tertiary-fixed": "#6ffbbe",
+                        "on-primary-fixed": "#001b3d",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "surface-container-high": "#e6e8ea",
+                        "inverse-surface": "#2d3133",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "outline": "#737782",
+                        "secondary-container": "#d5e0f8",
+                        "on-secondary": "#ffffff",
+                        "secondary": "#545f73",
+                        "surface-variant": "#e0e3e5",
+                        "on-primary-container": "#9bbfff",
+                        
+                        "status-opener-bg": "rgba(16, 185, 129, 0.15)",
+                        "status-opener-text": "#059669",
+                        "status-closer-bg": "rgba(249, 115, 22, 0.15)",
+                        "status-closer-text": "#ea580c",
+                        "status-overnight-bg": "rgba(139, 92, 246, 0.15)",
+                        "status-overnight-text": "#7c3aed",
+                        "status-mid-bg": "rgba(59, 130, 246, 0.15)",
+                        "status-mid-text": "#2563eb",
+                        "status-violation-bg": "rgba(239, 68, 68, 0.15)",
+                        "status-violation-text": "#dc2626",
+                        "status-rto-bg": "rgba(217, 70, 239, 0.15)",
+                        "status-rto-text": "#c026d3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "2rem",
+                        "stack-default": "1rem",
+                        "gutter": "1rem",
+                        "margin-mobile": "1rem",
+                        "stack-dense": "0.5rem",
+                        "container-max": "1440px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "data-tabular": ["Inter"],
+                        "label-bold": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-xl": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "data-tabular": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "label-bold": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                        "headline-lg": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-xl": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-background text-on-background font-body-md h-screen overflow-hidden flex flex-col">
+<!-- TopAppBar -->
+<nav class="bg-surface-container-lowest dark:bg-inverse-surface docked full-width top-0 sticky z-50 border-b border-outline-variant dark:border-outline flat no shadows flex items-center justify-between px-margin-desktop h-16 w-full max-w-container-max mx-auto shrink-0">
+<div class="flex items-center gap-6">
+<span class="font-headline-md text-headline-md font-bold text-primary dark:text-primary-fixed">Smart Roster Planner</span>
+<div class="hidden md:flex items-center gap-4 h-full">
+<a class="h-full flex items-center text-primary dark:text-primary-fixed font-bold border-b-2 border-primary dark:border-primary-fixed pb-1 hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors active:opacity-80 transition-opacity duration-150 px-2 font-body-md text-body-md" href="#">Schedule</a>
+<a class="h-full flex items-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors active:opacity-80 transition-opacity duration-150 px-2 font-body-md text-body-md" href="#">Dashboard</a>
+<a class="h-full flex items-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors active:opacity-80 transition-opacity duration-150 px-2 font-body-md text-body-md" href="#">Labor</a>
+<a class="h-full flex items-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors active:opacity-80 transition-opacity duration-150 px-2 font-body-md text-body-md" href="#">Employees</a>
+<a class="h-full flex items-center text-on-surface-variant dark:text-outline-variant hover:bg-surface-container-low dark:hover:bg-surface-container-high transition-colors active:opacity-80 transition-opacity duration-150 px-2 font-body-md text-body-md" href="#">Compliance</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden sm:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-sm">search</span>
+<input class="pl-9 pr-4 py-1.5 bg-surface-container-low border border-outline-variant rounded-full text-body-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none text-on-surface w-64 transition-all" placeholder="Search..." type="text"/>
+</div>
+<button aria-label="account_tree" class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">account_tree</span>
+</button>
+<button aria-label="notifications" class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">notifications</span>
+</button>
+<button aria-label="settings" class="p-2 rounded-full text-on-surface-variant hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center font-bold text-body-sm overflow-hidden border border-outline-variant ml-2">
+<img alt="Manager Profile" class="w-full h-full object-cover" data-alt="A professional headshot of a retail manager. A middle-aged man with short hair and glasses, wearing a neat button-down shirt. The lighting is bright and even, typical of a corporate headshot. The background is a clean, out-of-focus modern office setting. The mood is approachable yet serious." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBUNbKMMSbm2XMl2dQKU759DrKCmAvVroh9QqnlFg9l2U4tuxKwry8cxUaBKoLdgg8qAwGoUy6n2toUCvXhWMHANlWGJ5EAK7fLm0P83yaYLpEnz_NXe7-SqCTsPlb1N1fKli7xsSTh5_jWWb84VtZm0ay2WA0zYeHdrbQ7tXCR4rQAeQ3_uVSBiaf5yNsmmKMQtBmK7GHcj-JS-sEHuuRXuQyzgylVnLgcpyT24hWR-0PKD6GI8et2aJ2dilrUVkxIHdOvc6p4fq0"/>
+</div>
+</div>
+</nav>
+<!-- Main Content Area with SideNav -->
+<div class="flex flex-1 overflow-hidden">
+<!-- SideNavBar -->
+<aside class="bg-surface-container-low dark:bg-surface-container docked left h-full w-64 fixed z-40 border-r border-outline-variant dark:border-outline flat no shadows flex flex-col py-stack-default px-stack-dense shrink-0 relative transition-transform duration-300 hidden lg:flex">
+<div class="mb-6 px-3 flex items-center gap-3">
+<div class="w-10 h-10 rounded-lg bg-surface text-primary flex items-center justify-center border border-outline-variant shadow-sm">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">rule</span>
+</div>
+<div>
+<h2 class="font-label-bold text-label-bold text-on-surface dark:text-inverse-on-surface uppercase tracking-wider">Schedule Inspector</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Shift Audit Tool</p>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-1 overflow-y-auto scrollbar-hide">
+<a class="flex items-center gap-3 px-3 py-2 bg-primary-container dark:bg-primary text-on-primary-container dark:text-on-primary font-bold rounded-lg hover:bg-surface-container-highest dark:hover:bg-surface-dim transition-all active:scale-95 duration-75" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">analytics</span>
+<span class="font-body-sm text-body-sm">Overview</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-secondary-fixed-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-surface-dim transition-all active:scale-95 duration-75 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">warning</span>
+<span class="font-body-sm text-body-sm">Violations</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-secondary-fixed-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-surface-dim transition-all active:scale-95 duration-75 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">payments</span>
+<span class="font-body-sm text-body-sm">Labor Budget</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-secondary-fixed-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-surface-dim transition-all active:scale-95 duration-75 rounded-lg" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 0;">history</span>
+<span class="font-body-sm text-body-sm">Audit Log</span>
+</a>
+</nav>
+<div class="mt-auto pt-4 border-t border-outline-variant flex flex-col gap-2">
+<button class="w-full py-2 px-4 bg-primary text-on-primary font-label-bold text-label-bold rounded-lg hover:opacity-90 transition-opacity active:scale-95 shadow-sm flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-[16px]">check_circle</span>
+                    Run Validation
+                </button>
+<div class="flex flex-col gap-1 mt-2">
+<a class="flex items-center gap-3 px-3 py-2 text-on-secondary-fixed-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-surface-dim transition-all active:scale-95 duration-75 rounded-lg" href="#">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 0;">help</span>
+<span class="font-body-sm text-body-sm">Support</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-on-secondary-fixed-variant dark:text-outline-variant hover:bg-surface-container-highest dark:hover:bg-surface-dim transition-all active:scale-95 duration-75 rounded-lg" href="#">
+<span class="material-symbols-outlined text-[18px]" style="font-variation-settings: 'FILL' 0;">description</span>
+<span class="font-body-sm text-body-sm">Documentation</span>
+</a>
+</div>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="flex-1 overflow-hidden flex flex-col lg:ml-64 relative bg-surface">
+<!-- Dashboard Summary Bar -->
+<div class="p-stack-default bg-surface-container-lowest border-b border-outline-variant shrink-0 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-stack-default">
+<div class="bg-surface rounded-lg p-3 border border-outline-variant shadow-sm flex flex-col gap-1 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-full h-1 bg-primary"></div>
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase">Weekly Budget</span>
+<div class="flex items-end justify-between">
+<span class="font-headline-lg text-headline-lg text-on-surface">345h</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mb-1">Target</span>
+</div>
+</div>
+<div class="bg-surface rounded-lg p-3 border border-outline-variant shadow-sm flex flex-col gap-1 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-full h-1 bg-surface-tint"></div>
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase">Scheduled</span>
+<div class="flex items-end justify-between">
+<span class="font-headline-lg text-headline-lg text-on-surface">352h</span>
+<span class="font-body-sm text-body-sm text-error font-medium mb-1 flex items-center"><span class="material-symbols-outlined text-[14px]">arrow_upward</span> +7h</span>
+</div>
+</div>
+<div class="bg-surface rounded-lg p-3 border border-outline-variant shadow-sm flex flex-col gap-1 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-full h-1 bg-tertiary"></div>
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase">Staff Mix</span>
+<div class="flex items-end justify-between w-full">
+<div class="flex flex-col">
+<span class="font-headline-md text-headline-md text-on-surface leading-tight">60% <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">FT</span></span>
+<span class="font-headline-md text-headline-md text-on-surface leading-tight">40% <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">PT</span></span>
+</div>
+</div>
+</div>
+<div class="bg-surface rounded-lg p-3 border border-outline-variant shadow-sm flex flex-col gap-1 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-full h-1 bg-secondary"></div>
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase">Core / Excluded</span>
+<div class="flex items-end justify-between">
+<span class="font-headline-md text-headline-md text-on-surface">310 / 42</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant mb-1">Hrs</span>
+</div>
+</div>
+<div class="bg-surface rounded-lg p-3 border border-outline-variant shadow-sm flex flex-col gap-1 relative overflow-hidden col-span-2 md:col-span-1 lg:col-span-2 bg-gradient-to-br from-surface to-surface-container-low">
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase flex items-center justify-between">
+                        Confidence Score
+                        <span class="material-symbols-outlined text-[16px] text-tertiary">verified</span>
+</span>
+<div class="flex items-center gap-4 mt-1">
+<div class="text-4xl font-headline-xl text-headline-xl text-tertiary font-bold tracking-tighter">92%</div>
+<div class="flex-1">
+<div class="w-full bg-surface-variant rounded-full h-2 mt-1 mb-1 overflow-hidden">
+<div class="bg-tertiary h-2 rounded-full" style="width: 92%"></div>
+</div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">3 Minor Gaps • 0 Violations</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Schedule Grid Container -->
+<div class="flex-1 overflow-auto bg-surface-container-lowest relative">
+<!-- Sticky Header Row -->
+<div class="sticky top-0 z-30 bg-surface-container-low border-b border-outline-variant flex min-w-max shadow-sm">
+<!-- Left Corner (Empty/Label) -->
+<div class="w-64 shrink-0 border-r border-outline-variant p-3 flex items-end bg-surface-container-low sticky left-0 z-40 shadow-[4px_0_12px_rgba(0,0,0,0.05)]">
+<span class="font-label-bold text-label-bold text-on-surface-variant uppercase tracking-wider">Team Member</span>
+</div>
+<!-- Day Columns -->
+<div class="w-48 shrink-0 border-r border-outline-variant bg-surface-container-lowest flex flex-col">
+<div class="p-2 border-b border-outline-variant bg-surface flex justify-between items-center">
+<span class="font-label-bold text-label-bold text-on-surface uppercase">Mon 10/2</span>
+<span class="w-2 h-2 rounded-full bg-status-opener-text" title="Good Coverage"></span>
+</div>
+<div class="p-2 flex gap-1 justify-between text-center font-body-sm text-body-sm text-on-surface-variant bg-surface-container-lowest">
+<div class="flex flex-col"><span class="font-label-bold">N</span><span>24</span></div>
+<div class="flex flex-col"><span class="font-label-bold">H</span><span>22</span></div>
+<div class="flex flex-col"><span class="font-label-bold text-error">G</span><span class="text-error font-medium">-2</span></div>
+</div>
+</div>
+<div class="w-48 shrink-0 border-r border-outline-variant bg-surface-container-lowest flex flex-col">
+<div class="p-2 border-b border-outline-variant bg-surface flex justify-between items-center">
+<span class="font-label-bold text-label-bold text-on-surface uppercase">Tue 10/3</span>
+<span class="w-2 h-2 rounded-full bg-status-opener-text" title="Good Coverage"></span>
+</div>
+<div class="p-2 flex gap-1 justify-between text-center font-body-sm text-body-sm text-on-surface-variant bg-surface-container-lowest">
+<div class="flex flex-col"><span class="font-label-bold">N</span><span>22</span></div>
+<div class="flex flex-col"><span class="font-label-bold">H</span><span>22</span></div>
+<div class="flex flex-col"><span class="font-label-bold">G</span><span>0</span></div>
+</div>
+</div>
+<div class="w-48 shrink-0 border-r border-outline-variant bg-surface-container-lowest flex flex-col">
+<div class="p-2 border-b border-outline-variant bg-surface-tint flex justify-between items-center text-on-primary">
+<span class="font-label-bold text-label-bold uppercase">Wed 10/4</span>
+<span class="material-symbols-outlined text-[14px]" title="Truck Day">local_shipping</span>
+</div>
+<div class="p-2 flex gap-1 justify-between text-center font-body-sm text-body-sm text-on-surface-variant bg-surface-container-lowest">
+<div class="flex flex-col"><span class="font-label-bold">N</span><span>28</span></div>
+<div class="flex flex-col"><span class="font-label-bold">H</span><span>25</span></div>
+<div class="flex flex-col"><span class="font-label-bold text-error">G</span><span class="text-error font-medium">-3</span></div>
+</div>
+</div>
+<div class="w-48 shrink-0 border-r border-outline-variant bg-surface-container-lowest flex flex-col">
+<div class="p-2 border-b border-outline-variant bg-surface flex justify-between items-center">
+<span class="font-label-bold text-label-bold text-on-surface uppercase">Thu 10/5</span>
+<span class="w-2 h-2 rounded-full bg-status-opener-text" title="Good Coverage"></span>
+</div>
+<div class="p-2 flex gap-1 justify-between text-center font-body-sm text-body-sm text-on-surface-variant bg-surface-container-lowest">
+<div class="flex flex-col"><span class="font-label-bold">N</span><span>24</span></div>
+<div class="flex flex-col"><span class="font-label-bold">H</span><span>24</span></div>
+<div class="flex flex-col"><span class="font-label-bold">G</span><span>0</span></div>
+</div>
+</div>
+</div>
+<!-- Grid Body -->
+<div class="min-w-max flex flex-col">
+<!-- Row 1: Employee A -->
+<div class="flex group hover:bg-surface-container-low transition-colors border-b border-outline-variant/50">
+<!-- Employee Info (Sticky) -->
+<div class="w-64 shrink-0 p-2 flex items-center gap-3 border-r border-outline-variant bg-surface-container-lowest group-hover:bg-surface-container-low sticky left-0 z-20 shadow-[4px_0_12px_rgba(0,0,0,0.02)]">
+<div class="w-8 h-8 rounded bg-secondary-container text-on-secondary-container flex items-center justify-center font-label-bold text-label-bold">JD</div>
+<div class="flex flex-col flex-1 min-w-0">
+<span class="font-data-tabular text-data-tabular text-on-surface truncate">Doe, John</span>
+<div class="flex justify-between items-center w-full">
+<span class="font-body-sm text-body-sm text-on-surface-variant">FT • L1</span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">38.5h / 5d</span>
+</div>
+</div>
+</div>
+<!-- Cell Mon -->
+<div class="w-48 shrink-0 p-1.5 border-r border-outline-variant/50 relative">
+<div class="bg-surface rounded border border-outline-variant p-1.5 cursor-pointer hover:border-primary transition-colors h-full flex flex-col relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-status-opener-text"></div>
+<div class="flex justify-between items-start pl-2">
+<span class="font-data-tabular text-data-tabular text-on-surface leading-none">06:00 - 14:30</span>
+<span class="px-1 py-0.5 rounded text-[10px] font-bold bg-status-opener-bg text-status-opener-text uppercase">INV</span>
+</div>
+<div class="flex justify-between items-end mt-1 pl-2">
+<span class="font-body-sm text-[11px] text-on-surface-variant">8.0h</span>
+</div>
+</div>
+</div>
+<!-- Cell Tue -->
+<div class="w-48 shrink-0 p-1.5 border-r border-outline-variant/50">
+<div class="bg-surface rounded border border-outline-variant p-1.5 cursor-pointer hover:border-primary transition-colors h-full flex flex-col relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-status-opener-text"></div>
+<div class="flex justify-between items-start pl-2">
+<span class="font-data-tabular text-data-tabular text-on-surface leading-none">06:00 - 14:30</span>
+<span class="px-1 py-0.5 rounded text-[10px] font-bold bg-status-opener-bg text-status-opener-text uppercase">INV</span>
+</div>
+<div class="flex justify-between items-end mt-1 pl-2">
+<span class="font-body-sm text-[11px] text-on-surface-variant">8.0h</span>
+</div>
+</div>
+</div>
+<!-- Cell Wed -->
+<div class="w-48 shrink-0 p-1.5 border-r border-outline-variant/50">
+<div class="bg-surface rounded border border-outline-variant p-1.5 cursor-pointer hover:border-primary transition-colors h-full flex flex-col relative overflow-hidden ring-1 ring-error ring-inset">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-status-violation-text"></div>
+<div class="flex justify-between items-start pl-2">
+<span class="font-data-tabular text-data-tabular text-on-surface leading-none">05:00 - 15:00</span>
+<span class="px-1 py-0.5 rounded text-[10px] font-bold bg-surface-variant text-on-surface-variant uppercase">TRK</span>
+</div>
+<div class="flex justify-between items-end mt-1 pl-2">
+<span class="font-body-sm text-[11px] text-on-surface-variant">9.5h</span>
+<span class="material-symbols-outlined text-[14px] text-error" title="Overtime Warning">warning</span>
+</div>
+</div>
+</div>
+<!-- Cell Thu -->
+<div class="w-48 shrink-0 p-1.5 border-r border-outline-variant/50 bg-surface-container-low flex items-center justify-center">
+<span class="font-label-bold text-label-bold text-outline uppercase">OFF</span>
+</div>
+</div>
+<!-- Row 2: Employee B -->
+<div class="flex group hover:bg-surface-container-low transition-colors border-b border-outline-variant/50">
+<div class="w-64 shrink-0 p-2 flex items-center gap-3 border-r border-outline-variant bg-surface-container-lowest group-hover:bg-surface-container-low sticky left-0 z-20 shadow-[4px_0_12px_rgba(0,0,0,0.02)]">
+<div class="w-8 h-8 rounded bg-primary-container text-on-primary-container flex items-center justify-center font-label-bold text-label-bold">AS</div>
+<div class="flex flex-col flex-1 min-w-0">
+<span class="font-data-tabular text-data-tabular text-on-surface truncate">Smith, Anna</span>
+<div class="flex justify-between items-center w-full">
+<span class="font-body-sm text-body-sm text-on-surface-variant">PT • CSH</span>
+<span class="font-body-sm text-body-sm font-medium text-on-surface">24.0h / 4d</span>
+</div>
+</div>
+</div>
+<!-- Cell Mon -->
+<div class="w-48 shrink-0 p-1.5 border-r border-outline-variant/50">
+<div class="bg-surface rounded border border-outline-variant p-1.5 cursor-pointer hover:border-primary transition-colors h-full flex flex-col relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-status-closer-text"></div>
+<div class="flex justify-between items-start pl-2">
+<span class="font-data-tabular text-data-tabular text-on-surface leading-none">14:00 - 22:30</span>
+<span class="px-1 py-0.5 rounded text-[10px] font-bold bg-status-closer-bg text-status-closer-text uppercase">CSH</span>
+</div>
+<div class="flex justify-between items-end mt-1 pl-2">
+<span class="font-body-sm text-[11px] text-on-surface-variant">8.0h</span>
+</div>
+</div>
+</div>
+<!-- Cell Tue -->
+<div class="w-48 shrink-0 p-1.5 border-r border-outline-variant/50 bg-surface-container-low flex items-center justify-center relative overflow-hidden">
+<div class="absolute inset-0 bg-[repeating-linear-gradient(45deg,transparent,transparent_4px,rgba(0,0,0,0.03)_4px,rgba(0,0,0,0.03)_8px)]"></div>
+<span class="font-label-bold text-label-bold text-status-rto-text uppercase relative z-10 bg-surface/80 px-2 py-0.5 rounded">RTO</span>
+</div>
+<!-- Cell Wed -->
+<div class="w-48 shrink-0 p-1.5 border-r border-outline-variant/50">
+<div class="bg-surface rounded border border-outline-variant p-1.5 cursor-pointer hover:border-primary transition-colors h-full flex flex-col relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-status-mid-text"></div>
+<div class="flex justify-between items-start pl-2">
+<span class="font-data-tabular text-data-tabular text-on-surface leading-none">10:00 - 18:00</span>
+<span class="px-1 py-0.5 rounded text-[10px] font-bold bg-status-mid-bg text-status-mid-text uppercase">CSH</span>
+</div>
+<div class="flex justify-between items-end mt-1 pl-2">
+<span class="font-body-sm text-[11px] text-on-surface-variant">7.5h</span>
+</div>
+</div>
+</div>
+<!-- Cell Thu -->
+<div class="w-48 shrink-0 p-1.5 border-r border-outline-variant/50">
+<div class="bg-surface rounded border border-outline-variant p-1.5 cursor-pointer hover:border-primary transition-colors h-full flex flex-col relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-1 bg-status-closer-text"></div>
+<div class="flex justify-between items-start pl-2">
+<span class="font-data-tabular text-data-tabular text-on-surface leading-none">15:00 - 23:00</span>
+<span class="px-1 py-0.5 rounded text-[10px] font-bold bg-status-closer-bg text-status-closer-text uppercase">CSH</span>
+</div>
+<div class="flex justify-between items-end mt-1 pl-2">
+<span class="font-body-sm text-[11px] text-on-surface-variant">7.5h</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Contextual Inspector Panel (Simulated Active State) -->
+<aside class="bg-surface border-l border-outline-variant w-80 shrink-0 h-full flex flex-col shadow-[-4px_0_12px_rgba(0,0,0,0.05)] z-30 hidden xl:flex">
+<div class="p-4 border-b border-outline-variant bg-surface-container-lowest flex justify-between items-center">
+<h3 class="font-label-bold text-label-bold uppercase tracking-wider text-on-surface">Shift Details</h3>
+<button class="text-on-surface-variant hover:bg-surface-container-low p-1 rounded transition-colors">
+<span class="material-symbols-outlined text-[20px]">close</span>
+</button>
+</div>
+<div class="flex-1 overflow-y-auto p-4 flex flex-col gap-6">
+<!-- Employee Header -->
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded bg-secondary-container text-on-secondary-container flex items-center justify-center font-headline-md text-headline-md">JD</div>
+<div>
+<div class="font-headline-md text-headline-md text-on-surface">John Doe</div>
+<div class="font-body-sm text-body-sm text-on-surface-variant">Full Time • Inventory Lead</div>
+</div>
+</div>
+<!-- Shift Card -->
+<div class="bg-surface-container-lowest border border-error rounded-lg p-3 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-1 h-full bg-error"></div>
+<div class="flex justify-between items-start pl-2 mb-2">
+<div>
+<span class="font-body-sm text-body-sm text-on-surface-variant uppercase block">Wednesday, Oct 4</span>
+<span class="font-headline-lg text-headline-lg text-on-surface">05:00 - 15:00</span>
+</div>
+<span class="px-2 py-1 rounded text-xs font-bold bg-surface-variant text-on-surface-variant uppercase">TRK</span>
+</div>
+<div class="pl-2 flex justify-between text-body-sm font-body-sm">
+<span class="text-on-surface-variant">Duration: 9.5h</span>
+<span class="text-on-surface-variant">Lunch: 0.5h (Auto)</span>
+</div>
+</div>
+<!-- Alerts -->
+<div>
+<h4 class="font-label-bold text-label-bold text-on-surface-variant uppercase mb-2">Validation Alerts</h4>
+<div class="bg-error-container text-on-error-container p-3 rounded-lg flex gap-2 items-start border border-error/20">
+<span class="material-symbols-outlined text-[18px] shrink-0 mt-0.5">warning</span>
+<div>
+<div class="font-data-tabular text-data-tabular font-bold">Overtime Violation</div>
+<div class="font-body-sm text-body-sm mt-1">Shift duration exceeds 9.0h threshold. Adjust end time to 14:30 to comply with daily limits.</div>
+</div>
+</div>
+</div>
+<!-- Availability -->
+<div>
+<h4 class="font-label-bold text-label-bold text-on-surface-variant uppercase mb-2">Availability</h4>
+<div class="flex gap-2">
+<div class="flex-1 bg-surface-container-low rounded p-2 text-center">
+<div class="font-body-sm text-body-sm text-on-surface-variant">Prefers</div>
+<div class="font-data-tabular text-data-tabular text-on-surface">Mornings</div>
+</div>
+<div class="flex-1 bg-surface-container-low rounded p-2 text-center">
+<div class="font-body-sm text-body-sm text-on-surface-variant">Max Hrs</div>
+<div class="font-data-tabular text-data-tabular text-on-surface">40.0/wk</div>
+</div>
+</div>
+</div>
+</div>
+<div class="p-4 border-t border-outline-variant bg-surface-container-lowest flex gap-2">
+<button class="flex-1 py-2 px-4 bg-surface text-on-surface border border-outline-variant font-label-bold text-label-bold rounded hover:bg-surface-container-low transition-colors text-center">Edit</button>
+<button class="flex-1 py-2 px-4 bg-primary text-on-primary font-label-bold text-label-bold rounded hover:opacity-90 transition-opacity text-center">Fix Alert</button>
+</div>
+</aside>
+</div>
+</body></html>

@@ -11,6 +11,14 @@ export type TeamMember = {
   shifts: string[];
   unavailable: string[];
   coverageStatus?: "Included" | "Excluded";
+  primaryDepartment?: string;
+  crossTrainedDepartments?: string[];
+  isBorrowed?: boolean;
+};
+
+export type WeekConfig = {
+  id: string; // Sunday date YYYY-MM-DD
+  label: string; // Last Week, Current Week, etc.
 };
 
 export type Target = {
