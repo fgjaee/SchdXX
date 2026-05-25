@@ -17,9 +17,10 @@ import type { AuditEntry } from './components/views/AuditLogView'
 import { TeamInfoView } from './components/views/TeamInfoView'
 import type { TeamMember, Target, SummaryRow } from './types'
 import {
-  days, parseShift, roleFor, defaultRoster,
+  days, parseShift, defaultRoster,
   defaultShiftDefinitions, toNumber, createDefaultTargets, emptyShifts,
-  getSunday, formatDate, compareSeniority
+  getSunday, formatDate, compareSeniority, buildCoverageCountsForDay,
+  reconcileProduceRoster
 } from './lib/helpers'
 import type { ShiftDefinitions } from './types'
 import { 
@@ -37,7 +38,6 @@ export type AppView =
   | 'audit-log'
   | 'team-info';
 
-// Shared roster state exposed to views via context props
 export interface RosterState {
   roster: TeamMember[];
   targets: Target[];
@@ -62,30 +62,30 @@ export interface RosterState {
 function buildSummary(roster: TeamMember[], targets: Target[], shiftDefs: ShiftDefinitions, autoDeductLunch: boolean): SummaryRow[] {
   return days.map((day, i) => {
     const target = targets[i];
-    let open = 0, close = 0, overnight = 0, scheduledHours = 0;
+    let scheduledHours = 0;
+
     roster.forEach(person => {
       if (person.rosterStatus === 'Inactive') return;
       const shift = person.shifts[i] ?? '';
       const parsed = parseShift(shift, autoDeductLunch);
-      if (parsed) {
-        scheduledHours += parsed.hours;
-        const role = roleFor(person.coverageStatus, shift, shiftDefs);
-        if (role === 'open') open++;
-        else if (role === 'close') close++;
-        else if (role === 'overnight') overnight++;
-      }
+      if (parsed) scheduledHours += parsed.hours;
     });
+
+    const coverage = buildCoverageCountsForDay(roster, i, shiftDefs);
     const openNeeded = toNumber(target?.openNeeded ?? '0');
     const closeNeeded = toNumber(target?.closeNeeded ?? '0');
     const overnightNeeded = toNumber(target?.overnightNeeded ?? '0');
+
     return {
       day,
       date: target?.date ?? '',
-      open, close, overnight,
+      open: coverage.open,
+      close: coverage.close,
+      overnight: coverage.overnight,
       scheduledHours: Number(scheduledHours.toFixed(2)),
-      openDelta: open - openNeeded,
-      closeDelta: close - closeNeeded,
-      overnightDelta: overnight - overnightNeeded,
+      openDelta: coverage.open - openNeeded,
+      closeDelta: coverage.close - closeNeeded,
+      overnightDelta: coverage.overnight - overnightNeeded,
     };
   });
 }
@@ -121,7 +121,6 @@ function App() {
   const [loading, setLoading] = useState(true)
   const [currentView, setCurrentView] = useState<AppView>('schedule')
 
-  // Week & Department Context
   const [currentWeekId, setCurrentWeekId] = useState(() => {
     const today = new Date();
     const sun = getSunday(today);
@@ -129,7 +128,6 @@ function App() {
   });
   const [currentDepartment, setCurrentDepartment] = useState('Produce')
 
-  // Shared roster state (synced from EditableRosterStaffingView via callbacks)
   const [roster, setRoster] = useState<TeamMember[]>([])
   const [globalEmployees, setGlobalEmployees] = useState<TeamMember[]>([])
   const [targets, setTargets] = useState<Target[]>(() => createDefaultTargets(currentWeekId))
@@ -138,7 +136,6 @@ function App() {
   const [autoDeductLunch, setAutoDeductLunch] = useState(true)
   const [shiftDefinitions, setShiftDefinitions] = useState<ShiftDefinitions>(defaultShiftDefinitions)
 
-  // Audit log (session-scoped)
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([])
 
   const addAuditEntry = useCallback((entry: Omit<AuditEntry, 'timestamp'>) => {
@@ -150,7 +147,6 @@ function App() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null)
   const [saveScope, setSaveScope] = useState<'cloud' | 'local' | null>(null)
 
-  // Load data when user, week, or department changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser)
@@ -158,31 +154,27 @@ function App() {
         setIsInitialLoading(true)
         setLoading(true)
         
-        // 1. Load Global Employees First
         const globalEmps = await loadGlobalEmployees()
-        const effectiveGlobals = globalEmps.length > 0 ? globalEmps : defaultRoster
+        const effectiveGlobals = currentDepartment === 'Produce'
+          ? reconcileProduceRoster(globalEmps.length > 0 ? globalEmps : defaultRoster)
+          : (globalEmps.length > 0 ? globalEmps : defaultRoster)
 
-        // 2. Load Departmental/Weekly Data
         const data = await loadAppState(currentDepartment, currentWeekId)
-        const savedRoster = data?.roster || []
+        const savedRoster = currentDepartment === 'Produce'
+          ? reconcileProduceRoster(data?.roster || [])
+          : (data?.roster || [])
 
-        // Synchronize with the global pool to ensure profile data is current.
-        // 1. Members whose primary department is THIS department
         const deptMembers = effectiveGlobals
-          .filter(m => m.primaryDepartment === currentDepartment && m.rosterStatus !== 'Inactive')
+          .filter(m => m.primaryDepartment === currentDepartment)
           .map(m => {
             const saved = savedRoster.find(r => r.id === m.id)
             const savedHasShifts = !!saved?.shifts?.some(s => s && s.trim() !== "")
             const hasPattern = !!m.scheduleLocked && Array.isArray(m.fixedSchedule) && m.fixedSchedule.length === 7
-            // Respect any week that already has real shifts for this person.
-            // Otherwise, seed locked members from their recurring pattern.
             const seededShifts = savedHasShifts
               ? saved!.shifts
               : hasPattern
                 ? [...(m.fixedSchedule as string[])]
                 : (saved?.shifts || emptyShifts())
-            // Availability is a standing rule on the profile — it persists
-            // week to week and is never reset by the weekly snapshot.
             const standingUnavailable = Array.isArray(m.unavailable) && m.unavailable.length === 7
               ? [...m.unavailable]
               : emptyShifts()
@@ -195,13 +187,11 @@ function App() {
             }
           })
 
-        // 2. Members who are borrowed (primary dept is NOT this one, but they have shifts saved here)
         const borrowedMembers = savedRoster
           .filter(r => {
             const global = effectiveGlobals.find(g => g.id === r.id)
             const isPrimaryHere = global?.primaryDepartment === currentDepartment
             const hasShifts = r.shifts.some(s => s && s.trim() !== "")
-            // Only keep if they have shifts OR were manually flagged as borrowed
             return !isPrimaryHere && (hasShifts || r.isBorrowed)
           })
           .map(r => {
@@ -210,7 +200,7 @@ function App() {
               ? [...global.unavailable]
               : (r.unavailable || emptyShifts())
             return {
-              ...(global || r), // Use global profile if available
+              ...(global || r),
               shifts: r.shifts,
               unavailable: standingUnavailable,
               coverageStatus: r.coverageStatus || 'Included',
@@ -218,22 +208,32 @@ function App() {
             }
           })
 
-        const finalRoster = [...deptMembers, ...borrowedMembers].sort(compareSeniority)
+        const finalRoster = (currentDepartment === 'Produce'
+          ? reconcileProduceRoster([...deptMembers, ...borrowedMembers])
+          : [...deptMembers, ...borrowedMembers]
+        ).sort(compareSeniority)
         setRoster(finalRoster)
 
-        // Promote any roster member missing from the global pool so the whole
-        // team persists and shows on the Employees page (no re-adding weekly).
         const missing = finalRoster.filter(fr => !effectiveGlobals.some(g => g.id === fr.id))
-        const reconciledGlobals = missing.length > 0
-          ? [
+        const reconciledGlobals = currentDepartment === 'Produce'
+          ? reconcileProduceRoster([
               ...effectiveGlobals,
               ...missing.map(m => ({
                 ...m,
                 primaryDepartment: m.primaryDepartment || currentDepartment,
                 isBorrowed: false
               }))
-            ]
-          : effectiveGlobals
+            ])
+          : (missing.length > 0
+              ? [
+                  ...effectiveGlobals,
+                  ...missing.map(m => ({
+                    ...m,
+                    primaryDepartment: m.primaryDepartment || currentDepartment,
+                    isBorrowed: false
+                  }))
+                ]
+              : effectiveGlobals)
         setGlobalEmployees(reconciledGlobals)
 
         if (data) {
@@ -258,7 +258,6 @@ function App() {
     return () => unsubscribe()
   }, [currentWeekId, currentDepartment])
 
-  // Auto-save logic
   useEffect(() => {
     if (!user || isInitialLoading) return
 
@@ -272,7 +271,7 @@ function App() {
         autoDeductLunch,
         shiftDefinitions
       })
-      const b = await saveGlobalEmployees(globalEmployees)
+      const b = await saveGlobalEmployees(currentDepartment === 'Produce' ? reconcileProduceRoster(globalEmployees) : globalEmployees)
       setIsSaving(false)
       setLastSaved(new Date())
       setSaveScope(a === 'cloud' && b === 'cloud' ? 'cloud' : 'local')
@@ -281,39 +280,34 @@ function App() {
     return () => clearTimeout(timer)
   }, [roster, targets, weeklyHoursAvailable, minimumShiftLength, autoDeductLunch, currentDepartment, currentWeekId, shiftDefinitions, user, isInitialLoading, globalEmployees])
 
-  // Keep the weekly roster in sync with profile edits made on the Employees
-  // page (names, status, role, seniority, availability, etc.) without
-  // disturbing week-specific shifts.
   useEffect(() => {
     if (isInitialLoading) return
-    // Propagate profile edits from the global pool into the active week's
-    // roster WITHOUT changing roster membership or week-specific shifts.
-    // Membership (adds/removes) is owned by the load/re-seed path and the
-    // Employees page — never delete here, or a transiently-empty pool
-    // (offline/Firebase down) would wipe the schedule.
     if (globalEmployees.length === 0) return
-    const byId = new Map(globalEmployees.map(g => [g.id, g]))
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+    const sourceGlobals = currentDepartment === 'Produce' ? reconcileProduceRoster(globalEmployees) : globalEmployees
+    const byId = new Map(sourceGlobals.map(g => [g.id, g]))
     setRoster(prev => {
       let changed = false
-      const nextRoster = prev.map(r => {
-        const g = byId.get(r.id)
-        if (!g) return r
-        const merged = { ...g, shifts: r.shifts, isBorrowed: r.isBorrowed }
-        const fieldsDiffer =
-          merged.name !== r.name || merged.status !== r.status || merged.role !== r.role ||
-          merged.jobTitle !== r.jobTitle || merged.seniorityDate !== r.seniorityDate ||
-          merged.isTeamLeader !== r.isTeamLeader || merged.birthday !== r.birthday ||
-          merged.primaryDepartment !== r.primaryDepartment || merged.rosterStatus !== r.rosterStatus ||
-          merged.scheduleLocked !== r.scheduleLocked ||
-          merged.minHours !== r.minHours || merged.maxHours !== r.maxHours ||
-          JSON.stringify(merged.unavailable) !== JSON.stringify(r.unavailable) ||
-          JSON.stringify(merged.preferredDaysOff) !== JSON.stringify(r.preferredDaysOff) ||
-          JSON.stringify(merged.timeOff) !== JSON.stringify(r.timeOff)
-        if (fieldsDiffer) { changed = true; return merged }
-        return r
-      })
-      if (!changed) return prev
+      const nextRoster = prev
+        .filter(r => currentDepartment !== 'Produce' || sourceGlobals.some(g => g.id === r.id))
+        .map(r => {
+          const g = byId.get(r.id)
+          if (!g) return r
+          const merged = { ...g, shifts: r.shifts, isBorrowed: r.isBorrowed }
+          const fieldsDiffer =
+            merged.name !== r.name || merged.status !== r.status || merged.role !== r.role ||
+            merged.jobTitle !== r.jobTitle || merged.seniorityDate !== r.seniorityDate ||
+            merged.isTeamLeader !== r.isTeamLeader || merged.birthday !== r.birthday ||
+            merged.primaryDepartment !== r.primaryDepartment || merged.rosterStatus !== r.rosterStatus ||
+            merged.scheduleLocked !== r.scheduleLocked ||
+            merged.minHours !== r.minHours || merged.maxHours !== r.maxHours ||
+            merged.coverageStatus !== r.coverageStatus ||
+            JSON.stringify(merged.unavailable) !== JSON.stringify(r.unavailable) ||
+            JSON.stringify(merged.preferredDaysOff) !== JSON.stringify(r.preferredDaysOff) ||
+            JSON.stringify(merged.timeOff) !== JSON.stringify(r.timeOff)
+          if (fieldsDiffer) { changed = true; return merged }
+          return r
+        })
+      if (!changed && nextRoster.length === prev.length) return prev
       return [...nextRoster].sort(compareSeniority)
     })
   }, [globalEmployees, currentDepartment, isInitialLoading])
@@ -324,7 +318,7 @@ function App() {
     const a = await saveAppState(currentDepartment, currentWeekId, {
       roster, targets, weeklyHoursAvailable, minimumShiftLength, autoDeductLunch, shiftDefinitions
     })
-    const b = await saveGlobalEmployees(globalEmployees)
+    const b = await saveGlobalEmployees(currentDepartment === 'Produce' ? reconcileProduceRoster(globalEmployees) : globalEmployees)
     setIsSaving(false)
     setLastSaved(new Date())
     setSaveScope(a === 'cloud' && b === 'cloud' ? 'cloud' : 'local')
@@ -342,7 +336,6 @@ function App() {
     setCurrentView(view)
   }, [])
 
-  // Derived data for view components
   const rosterSummary = buildSummary(roster, targets, shiftDefinitions, autoDeductLunch)
   const totals = buildTotals(roster, weeklyHoursAvailable, autoDeductLunch)
 
